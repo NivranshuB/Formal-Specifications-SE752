@@ -1,0 +1,8 @@
+# Dot and Pdf visualisation files
+*.dot
+*.dotx
+*.pdf
+
+# Files for 'fuzz' and 'prob' models
+*.fuzz
+*.prob
