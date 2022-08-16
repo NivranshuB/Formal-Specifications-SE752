@@ -1,0 +1,96 @@
+\begin{document}
+
+\begin{zed}
+[ MSG ]
+\end{zed}
+
+\begin{axdef}
+size : \nat 
+\where
+size = 4
+\end{axdef}
+
+\begin{schema}{Buffer}
+items : \seq MSG 
+\where
+\# items \leq size
+\end{schema}
+
+\begin{schema}{Join}
+\Delta Buffer \\
+msg? : MSG 
+\where
+\# items < size \\
+items' = items \cat \langle msg? \rangle
+\end{schema}
+
+\begin{schema}{Leave}
+ \Delta Buffer \\
+ msg! : MSG 
+\where
+ items \neq \emptyset \\
+ items =~\langle msg! \rangle \cat items'
+\end{schema}
+
+\begin{schema}{Init}
+ Buffer 
+\where
+ items =~\langle \rangle
+\end{schema}
+
+\begin{schema}{Flush}
+ \Delta Buffer \\
+ out! : \seq MSG 
+\where
+ out! = items \\
+ items' = \langle \rangle
+\end{schema}
+
+\begin{schema}{Count}
+ \Xi Buffer \\
+ m? : MSG \\
+ n! : \nat 
+\where
+ n! = \# ( items \rres \{ m? \} )
+\end{schema}
+
+\begin{schema}{NewJoin}
+  Join
+\where
+  msg? \notin \ran items
+\end{schema}
+
+\begin{zed}
+TwoJoins \defs Join[msg_1?/msg?] \semi Join[msg_2?/msg?]
+\end{zed}
+
+\begin{schema}{Duplicate}
+  \Delta Buffer
+\where
+  items \neq  \langle \rangle \\
+  \# items < size\\
+  items' = items \cat \langle head(items) \rangle 
+\end{schema}
+
+\begin{schema}{Getsize}
+\Xi Buffer\\
+n! : \nat \\
+\where
+n! = \# items \\
+\end{schema}
+
+\begin{schema}{Titanic}
+\Delta Buffer \\
+ msgs? : \seq MSG\\
+\where
+ items' = (1 \upto size) \dres (items \cat msgs?)
+\end{schema}
+
+\begin{schema}{Penguin}
+\Delta Buffer\\
+msgs? : \seq MSG \\
+\where
+\exists s:\seq MSG @  ((s \cat items' = items \cat msgs?) \land (s \neq \emptyset \implies \# items' = size)) \\
+\end{schema}
+
+\end{document}
