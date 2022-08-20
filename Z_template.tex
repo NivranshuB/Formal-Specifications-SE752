@@ -1,96 +1,112 @@
 \begin{document}
 
-\begin{zed}
-[ MSG ]
-\end{zed}
-
 \begin{axdef}
-size : \nat 
+  minQuantity : \nat \\
+  maxQuantity : \nat \\
+  petrolPrice : \nat \\
+  Boolean : \power \nat
 \where
-size = 4
+  minQuantity = 1 \\
+  maxQuantity = 100 \\
+  petrolPrice = 2 \\
+  Boolean = \{0, 1\}
 \end{axdef}
 
-\begin{schema}{Buffer}
-items : \seq MSG 
+\begin{schema}{Pump}
+  quantitySpecified : Boolean \\
+  cashAmount : \nat \\
+  litres : \nat \\
+  pumpAttached : Boolean \\
 \where
-\# items \leq size
-\end{schema}
-
-\begin{schema}{Join}
-\Delta Buffer \\
-msg? : MSG 
-\where
-\# items < size \\
-items' = items \cat \langle msg? \rangle
-\end{schema}
-
-\begin{schema}{Leave}
- \Delta Buffer \\
- msg! : MSG 
-\where
- items \neq \emptyset \\
- items =~\langle msg! \rangle \cat items'
+  cashAmount \geq 0 \\
+  litres \geq 0 \\
+  cashAmount = litres * petrolPrice \\
+  litres \leq maxQuantity
 \end{schema}
 
 \begin{schema}{Init}
- Buffer 
+  Pump
 \where
- items =~\langle \rangle
+  quantitySpecified = 0 \\
+  cashAmount = 0 \\
+  litres = 0 \\
+  pumpAttached = 0 \\
 \end{schema}
 
-\begin{schema}{Flush}
- \Delta Buffer \\
- out! : \seq MSG 
-\where
- out! = items \\
- items' = \langle \rangle
-\end{schema}
+ \begin{schema}{Input}
+  \Delta Pump
+ \where
+  pumpAttached = 0 \\
+  pumpAttached' = pumpAttached\\
+  quantitySpecified = 0 \\
+  quantitySpecified' = 1
+ \end{schema}
 
-\begin{schema}{Count}
- \Xi Buffer \\
- m? : MSG \\
- n! : \nat 
-\where
- n! = \# ( items \rres \{ m? \} )
-\end{schema}
+ \begin{schema}{InputCashAmount}
+  Input \\
+  a? : \nat \\
+  o! : Boolean 
+ \where
+  cashAmount' = a? \\
+  litres' = a? \div petrolPrice \\
+  litres' \geq minQuantity \\
+  o! = 1
+ \end{schema}
 
-\begin{schema}{NewJoin}
-  Join
-\where
-  msg? \notin \ran items
-\end{schema}
+ \begin{schema}{InputLitreQuantity}
+  Input \\
+  q? : \nat \\
+  o! : Boolean 
+ \where
+  litres' = q? \\
+  litres' \geq minQuantity \\
+  cashAmount' = q? * petrolPrice \\
+  o! = 1
+ \end{schema}
+ 
+ \begin{schema}{ResetQuantity}
+  \Delta Pump
+ \where
+  pumpAttached = 0 \\
+  pumpAttached' = pumpAttached \\
+  quantitySpecified = 1 \\
+  quantitySpecified' = 0 \\
+  cashAmount' = 0 \\
+  litres' = 0 \\
+ \end{schema}
 
-\begin{zed}
-TwoJoins \defs Join[msg_1?/msg?] \semi Join[msg_2?/msg?]
-\end{zed}
+ \begin{schema}{AttachPump}
+  \Delta Pump
+ \where
+  cashAmount = cashAmount' \\
+  litres = litres' \\
+  quantitySpecified = quantitySpecified' \\
+  quantitySpecified = 1 \\
+  pumpAttached = 0 \\
+  pumpAttached' = 1
+ \end{schema}
 
-\begin{schema}{Duplicate}
-  \Delta Buffer
-\where
-  items \neq  \langle \rangle \\
-  \# items < size\\
-  items' = items \cat \langle head(items) \rangle 
-\end{schema}
+ \begin{schema}{RemovePump}
+  \Delta Pump
+ \where
+  cashAmount = cashAmount' \\
+  litres = litres' \\
+  quantitySpecified = quantitySpecified' \\
+  pumpAttached = 1 \\
+  pumpAttached' = 0
+ \end{schema}
 
-\begin{schema}{Getsize}
-\Xi Buffer\\
-n! : \nat \\
-\where
-n! = \# items \\
-\end{schema}
-
-\begin{schema}{Titanic}
-\Delta Buffer \\
- msgs? : \seq MSG\\
-\where
- items' = (1 \upto size) \dres (items \cat msgs?)
-\end{schema}
-
-\begin{schema}{Penguin}
-\Delta Buffer\\
-msgs? : \seq MSG \\
-\where
-\exists s:\seq MSG @  ((s \cat items' = items \cat msgs?) \land (s \neq \emptyset \implies \# items' = size)) \\
-\end{schema}
+ \begin{schema}{pressLever}
+  \Delta Pump
+ \where
+  quantitySpecified = 1 \\
+  pumpAttached = 1 \\
+  litres \geq minQuantity \\
+  
+  litres' = 0 \\
+  cashAmount' = 0 \\
+  quantitySpecified' = 0 \\
+  pumpAttached' = pumpAttached
+ \end{schema}
 
 \end{document}
