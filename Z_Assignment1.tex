@@ -1,0 +1,39 @@
+\begin{document}
+
+\begin{axdef}
+maxCapacity: \nat
+\where
+maxCapacity = 500
+\end{axdef}
+
+\begin{schema}{Reserve}
+currentFuel : \nat
+\where
+currentFuel \leq maxCapacity
+\end{schema}
+
+\begin{schema}{DispenseFromReserve}
+\Delta Reserve \\
+dispenseAmount? : \nat \\
+\where
+dispenseAmount? \leq currentFuel \implies currentFuel' = currentFuel - dispenseAmount? \\
+dispenseAmount? > currentFuel \implies currentFuel' = 0
+\end{schema}
+
+\begin{schema}{AddToReserve}
+\Delta Reserve \\
+addFuelAmount? : \nat \\
+\where
+addFuelAmount? \leq maxCapacity - currentFuel  \implies currentFuel' = currentFuel + addFuelAmount? \\  
+addFuelAmount? > maxCapacity - currentFuel \implies currentFuel' = maxCapacity 
+\end{schema}
+
+\begin{schema}{Init}
+Reserve
+\where
+currentFuel = 100
+\end{schema}
+
+\end{document}
+
+
