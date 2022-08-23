@@ -1,39 +1,157 @@
 \begin{document}
 
 \begin{axdef}
-maxCapacity: \nat
+maxCapacity: \nat \\
+minInputQuantity : \nat \\
+maxInputQuantity : \nat \\
+petrolPrice : \nat \\
+Boolean : \power \nat
 \where
-maxCapacity = 500
+maxCapacity = 500 \\
+minInputQuantity = 1 \\
+maxInputQuantity = 100 \\
+petrolPrice = 2 \\
+Boolean = \{0, 1\}
 \end{axdef}
 
-\begin{schema}{Reserve}
-currentFuel : \nat
+\begin{schema}{PetrolStation}
+petrolQuantitySold : \nat \\
+revenueEarned : \nat \\
+currentFuel : \nat \\
+pumpCashAmount : \nat \\
+pumpLitres : \nat \\
+isQuantitySpecified : Boolean \\
+isPumpAttached : Boolean
 \where
-currentFuel \leq maxCapacity
+petrolQuantitySold \geq 0 \\
+revenueEarned \geq 0 \\
+currentFuel \leq maxCapacity \\
+pumpCashAmount \geq 0 \\
+pumpLitres \geq 0 \\
+pumpCashAmount = pumpLitres * petrolPrice \\
+pumpLitres \leq maxInputQuantity
 \end{schema}
 
 \begin{schema}{DispenseFromReserve}
-\Delta Reserve \\
+\Delta PetrolStation \\
 dispenseAmount? : \nat \\
 \where
 dispenseAmount? \leq currentFuel \implies currentFuel' = currentFuel - dispenseAmount? \\
-dispenseAmount? > currentFuel \implies currentFuel' = 0
+dispenseAmount? > currentFuel \implies currentFuel' = 0 \\
+petrolQuantitySold = petrolQuantitySold' \\
+revenueEarned = revenueEarned' \\
+pumpCashAmount = pumpCashAmount' \\
+pumpLitres = pumpLitres' \\
+isQuantitySpecified = isQuantitySpecified' \\
+isPumpAttached = isPumpAttached' \\
 \end{schema}
 
 \begin{schema}{AddToReserve}
-\Delta Reserve \\
+\Delta PetrolStation \\
 addFuelAmount? : \nat \\
 \where
 addFuelAmount? \leq maxCapacity - currentFuel  \implies currentFuel' = currentFuel + addFuelAmount? \\  
-addFuelAmount? > maxCapacity - currentFuel \implies currentFuel' = maxCapacity 
+addFuelAmount? > maxCapacity - currentFuel \implies currentFuel' = maxCapacity \\
+petrolQuantitySold = petrolQuantitySold' \\
+revenueEarned = revenueEarned' \\
+pumpCashAmount = pumpCashAmount' \\
+pumpLitres = pumpLitres' \\
+isQuantitySpecified = isQuantitySpecified' \\
+isPumpAttached = isPumpAttached' \\
 \end{schema}
 
-\begin{schema}{Init}
-Reserve
+\begin{schema}{Input}
+\Delta PetrolStation
 \where
-currentFuel = 100
+isPumpAttached = 0 \\
+isPumpAttached = isPumpAttached'\\
+isQuantitySpecified = 0 \\
+isQuantitySpecified' = 1 \\
+\end{schema}
+
+\begin{schema}{InputQuantity}
+Input \\
+q? : \nat \\
+outcome! : Boolean 
+\where
+pumpLitres' = q? \\
+pumpLitres' \geq minInputQuantity \\
+pumpCashAmount' = q? * petrolPrice \\
+outcome! = 1 \\
+currentFuel = currentFuel' \\
+petrolQuantitySold = petrolQuantitySold' \\
+revenueEarned = revenueEarned' \\
+\end{schema}
+
+\begin{schema}{ResetQuantity}
+\Delta PetrolStation
+\where
+isPumpAttached = 0 \\
+isPumpAttached' = isPumpAttached \\
+isQuantitySpecified = 1 \\
+isQuantitySpecified' = 0 \\
+pumpCashAmount' = 0 \\
+pumpLitres' = 0 \\
+currentFuel = currentFuel' \\
+petrolQuantitySold = petrolQuantitySold' \\
+revenueEarned = revenueEarned'
+\end{schema}
+
+\begin{schema}{AttachPump}
+\Delta PetrolStation
+\where
+pumpCashAmount = pumpCashAmount' \\
+pumpLitres = pumpLitres' \\
+isQuantitySpecified = isQuantitySpecified' \\
+isQuantitySpecified = 1 \\
+isPumpAttached = 0 \\
+isPumpAttached' = 1 \\
+currentFuel = currentFuel' \\
+petrolQuantitySold = petrolQuantitySold' \\
+revenueEarned = revenueEarned'
+\end{schema}
+
+\begin{schema}{RemovePump}
+\Delta PetrolStation
+\where
+pumpCashAmount = pumpCashAmount' \\
+pumpLitres = pumpLitres' \\
+isQuantitySpecified = isQuantitySpecified' \\
+isPumpAttached = 1 \\
+isPumpAttached' = 0 \\
+currentFuel = currentFuel' \\
+petrolQuantitySold = petrolQuantitySold' \\
+revenueEarned = revenueEarned'
+\end{schema}
+
+\begin{schema}{pressLever}
+\Delta PetrolStation
+\where
+isQuantitySpecified = 1 \\
+isPumpAttached = 1 \\
+pumpLitres \geq minInputQuantity \\
+pumpLitres \leq currentFuel \\
+
+currentFuel' = currentFuel - pumpLitres \\
+petrolQuantitySold' = petrolQuantitySold + pumpLitres \\
+revenueEarned' = revenueEarned + (pumpLitres * petrolPrice) \\
+pumpLitres' = 0 \\
+pumpCashAmount' = 0 \\
+isQuantitySpecified' = 0 \\
+isPumpAttached' = isPumpAttached
+\end{schema}
+
+
+\begin{schema}{Init}
+PetrolStation
+\where
+currentFuel = 100 \\
+petrolQuantitySold = 0 \\
+revenueEarned = 0 \\
+pumpCashAmount = 0 \\
+pumpLitres = 0 \\
+isQuantitySpecified = 0 \\
+isPumpAttached = 0 \\
 \end{schema}
 
 \end{document}
-
-
