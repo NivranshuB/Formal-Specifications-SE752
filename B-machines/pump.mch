@@ -13,7 +13,7 @@ ResetQuantity = PRE quantitySpecified=TRUE THEN cashAmount:=0 || litres:=0 || qu
 AttachPump = PRE quantitySpecified=TRUE & pumpAttached=FALSE THEN pumpAttached:=TRUE END;
 RemovePump = PRE quantitySpecified=TRUE & pumpAttached=TRUE THEN pumpAttached:=FALSE END;
 PressLever = PRE quantitySpecified=TRUE & pumpAttached=TRUE THEN 
-IF CurrentFuelAmount < litres THEN litres:=CurrentFuelAmount || cashAmount:= CurrentFuelAmount*petrolPrice || DispenseFromReserve(CurrentFuelAmount) || fuelPumped:=TRUE ELSE fuelPumped:=TRUE || DispenseFromReserve(llitres) END END;
+IF currentFuelAmount < litres THEN litres:=currentFuelAmount || cashAmount:= currentFuelAmount*petrolPrice || DispenseFromReserve(currentFuelAmount) || fuelPumped:=TRUE ELSE fuelPumped:=TRUE || DispenseFromReserve(litres) END END;
 EndTransaction = PRE fuelPumped=TRUE THEN transactionActive:=FALSE END
 END
 
