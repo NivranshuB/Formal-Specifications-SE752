@@ -1,4 +1,6 @@
 MACHINE Pump
+/* This B Machine models the fuel dispenser pumps of a petrol station.
+*/
 
 INCLUDES Reserve
 
@@ -16,7 +18,9 @@ INVARIANT cashAmount:PUMP-->NAT & litres:PUMP-->NAT & petrolPrice:NAT & petrolPr
 
 INITIALISATION quantitySpecified:=PUMP*{unspecified} || cashAmount:=PUMP*{0} || litres:=PUMP*{0} || pumpAttached:=PUMP*{unattached} || fuelPumped:=PUMP*{unpumped} || pumpStatus:=PUMP*{pumpFree} || petrolPrice:=2
 
+
 OPERATIONS
+
 SetPetrolPrice(price) = PRE price> 0 & price<=maxPetrolPrice THEN petrolPrice:=price END;
 
 FreeUpPump(pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied THEN pumpStatus(pp):=pumpFree END;
@@ -38,4 +42,5 @@ IF reserveFuelAmount < litres(pp) THEN litres(pp):=reserveFuelAmount || cashAmou
 ELSE fuelPumped(pp):=pumped || DispenseFromReserve(litres(pp)) END END;
 
 ResetPump(pp) = PRE pp:PUMP THEN quantitySpecified(pp):=unspecified || cashAmount(pp):=0 || litres(pp):=0 || pumpAttached(pp):=unattached || fuelPumped(pp):=unpumped END
+
 END
