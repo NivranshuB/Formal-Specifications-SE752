@@ -13,6 +13,7 @@ INVARIANT transactionActive:PUMP-->TRANSACTION & totalRevenue:NAT & totalRevenue
 INITIALISATION transactionActive:=PUMP*{inactive} || totalRevenue:=0 || totalPetrolLitresSold:=0
 
 OPERATIONS
-StartTransaction(pp) = PRE pp:PUMP & transactionActive(pp)=inactive & pumpStatus(pp)=locked THEN transactionActive(pp):=active || UnlockPump(pp) END;
-EndTransaction(pp) = PRE pp:PUMP & fuelPumped(pp)=pumped & transactionActive(pp)=active THEN transactionActive(pp):=inactive || totalRevenue:= totalRevenue + cashAmount(pp) || totalPetrolLitresSold:= totalPetrolLitresSold + litres(pp) || ResetPump(pp) || LockPump(pp) END
+StartTransaction(pp) = PRE pp:PUMP & transactionActive(pp)=inactive & pumpStatus(pp)=pumpFree THEN transactionActive(pp):=active || OccupyPump(pp) END;
+ResetTransaction(pp) = PRE pp:PUMP & fuelPumped(pp)=unpumped & transactionActive(pp)=active THEN transactionActive(pp):=inactive || ResetPump(pp) || FreeUpPump(pp) END;
+EndTransaction(pp) = PRE pp:PUMP & fuelPumped(pp)=pumped & transactionActive(pp)=active THEN transactionActive(pp):=inactive || totalRevenue:= totalRevenue + cashAmount(pp) || totalPetrolLitresSold:= totalPetrolLitresSold + litres(pp) || ResetPump(pp) || FreeUpPump(pp) END
 END
