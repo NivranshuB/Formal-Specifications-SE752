@@ -2,7 +2,7 @@ MACHINE PetrolStation
 
 INCLUDES Pump
 
-PROMOTES SetPetrolPrice, InputCashAmount, InputLitreQuantity, ResetQuantity, AttachPump, RemovePump, PressLever
+PROMOTES SetPetrolPrice, InputCashAmount, InputLitreQuantity, ResetQuantity, AttachPump, RemovePump, PressLever, AddToReserve
 
 SETS TRANSACTION={active, inactive}
 

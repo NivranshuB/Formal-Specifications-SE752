@@ -2,6 +2,8 @@ MACHINE Pump
 
 INCLUDES Reserve
 
+PROMOTES AddToReserve
+
 SETS PUMP; PUMPATTACHED={attached,unattached}; QUANTITYSPECIFIED={specified,unspecified}; FUELPUMPED={pumped, unpumped}; PUMPSTATUS={locked, unlocked}
 
 CONSTANTS minQuantity, maxQuantity
@@ -24,7 +26,7 @@ ResetQuantity(pp) = PRE pp:PUMP & quantitySpecified(pp)=specified THEN cashAmoun
 AttachPump(pp) = PRE pp:PUMP & pumpStatus(pp)=unlocked & quantitySpecified(pp)=specified & pumpAttached(pp)=unattached THEN pumpAttached(pp):=attached END;
 RemovePump(pp) = PRE pp:PUMP & quantitySpecified(pp)=specified & pumpAttached(pp)=attached THEN pumpAttached(pp):=unattached END;
 PressLever(pp) = PRE pp:PUMP & quantitySpecified(pp)=specified & pumpAttached(pp)=attached & fuelPumped(pp)=unpumped THEN 
-IF currentFuelAmount < litres(pp) THEN litres(pp):=currentFuelAmount || cashAmount(pp):= currentFuelAmount*petrolPrice || DispenseFromReserve(currentFuelAmount) || fuelPumped(pp):=pumped
+IF reserveFuelAmount < litres(pp) THEN litres(pp):=reserveFuelAmount || cashAmount(pp):= reserveFuelAmount*petrolPrice || DispenseFromReserve(reserveFuelAmount) || fuelPumped(pp):=pumped
 ELSE fuelPumped(pp):=pumped || DispenseFromReserve(litres(pp)) END END;
 ResetPump(pp) = PRE pp:PUMP THEN quantitySpecified(pp):=unspecified || cashAmount(pp):=0 || litres(pp):=0 || pumpAttached(pp):=unattached || fuelPumped(pp):=unpumped END
 END
