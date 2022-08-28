@@ -19,7 +19,7 @@ OPERATIONS
 
 StartTransaction(pp) = PRE pp:PUMP & transactionActive(pp)=inactive & pumpStatus(pp)=pumpFree THEN transactionActive(pp):=active || OccupyPump(pp) END;
 
-ResetTransaction(pp) = PRE pp:PUMP & fuelPumped(pp)=unpumped & transactionActive(pp)=active THEN transactionActive(pp):=inactive || ResetPump(pp) || FreeUpPump(pp) END;
+AbortTransaction(pp) = PRE pp:PUMP & fuelPumped(pp)=unpumped & transactionActive(pp)=active THEN transactionActive(pp):=inactive || ResetPump(pp) || FreeUpPump(pp) END;
 
 EndTransaction(pp) = PRE pp:PUMP & fuelPumped(pp)=pumped & transactionActive(pp)=active & pumpAttached(pp)=unattached THEN transactionActive(pp):=inactive || totalRevenue:= totalRevenue + cashAmount(pp) || totalPetrolLitresSold:= totalPetrolLitresSold + litres(pp) || ResetPump(pp) || FreeUpPump(pp) END
 
