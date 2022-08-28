@@ -23,11 +23,11 @@ FreeUpPump(pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied THEN pumpStatus(pp):=
 
 OccupyPump(pp) = PRE pp:PUMP & pumpStatus(pp)=pumpFree THEN pumpStatus(pp):=pumpOccupied END;
 
-InputCashAmount(amount, pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied & amount >= minQuantity & amount<= petrolPrice*maxQuantity & amount:NAT & amount/petrolPrice >= minQuantity & quantitySpecified(pp)=unspecified THEN cashAmount(pp):=amount || litres(pp):=amount/petrolPrice || quantitySpecified(pp):=specified END;
+InputCashAmount(amount, pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied & amount >= minQuantity & amount<= petrolPrice*maxQuantity & amount:NAT & amount/petrolPrice >= minQuantity & quantitySpecified(pp)=unspecified & fuelPumped(pp)=unpumped THEN cashAmount(pp):=amount || litres(pp):=amount/petrolPrice || quantitySpecified(pp):=specified END;
 
-InputLitreQuantity(amount, pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied & amount:NAT & amount >= minQuantity & amount <= maxQuantity & quantitySpecified(pp)=unspecified THEN cashAmount(pp):=amount*petrolPrice || litres(pp):=amount || quantitySpecified(pp):=specified END;
+InputLitreQuantity(amount, pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied & amount:NAT & amount >= minQuantity & amount <= maxQuantity & quantitySpecified(pp)=unspecified & fuelPumped(pp)=unpumped THEN cashAmount(pp):=amount*petrolPrice || litres(pp):=amount || quantitySpecified(pp):=specified END;
 
-ResetQuantity(pp) = PRE pp:PUMP & quantitySpecified(pp)=specified THEN cashAmount(pp):=0 || litres(pp):=0 || quantitySpecified(pp):=unspecified END;
+ResetQuantity(pp) = PRE pp:PUMP & quantitySpecified(pp)=specified & fuelPumped(pp)=unpumped THEN cashAmount(pp):=0 || litres(pp):=0 || quantitySpecified(pp):=unspecified END;
 
 AttachPump(pp) = PRE pp:PUMP & pumpStatus(pp)=pumpOccupied & quantitySpecified(pp)=specified & pumpAttached(pp)=unattached THEN pumpAttached(pp):=attached END;
 
