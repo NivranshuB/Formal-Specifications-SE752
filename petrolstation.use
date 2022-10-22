@@ -1,0 +1,161 @@
+model petrol_station
+
+-- Enumerations
+enum TransactionStatus {active, inactive}
+enum PumpAttached {attached, unattached}
+enum QuantitySpecified {specified, unspecified}
+enum FuelPumped {pumped, unpumped}
+enum PumpStatus {pumpFree, pumpOccupied}
+
+-- Classes
+class PetrolStation
+attributes
+name : String
+totalRevenue: Integer
+totalPetrolLitresSold: Integer
+transactionActive: TransactionStatus
+pumps: Set(Pump)
+operations
+StartTransaction(pp: Pump)
+AbortTransaction(pp: Pump)
+EndTransaction(pp: Pump)
+end
+
+class Pump
+attributes
+name: String
+quantitySpecified: QuantitySpecified
+cashAmount: Integer
+litres: Integer
+pumpAttached: PumpAttached
+fuelPumped: FuelPumped
+petrolPrice: Integer
+pumpStatus: PumpStatus
+operations
+SetPetrolPrice(pr: Integer)
+FreeUpPump()
+OccupyPump()
+InputCashAmount(am: Integer)
+InputLitreQuantity(q: Integer)
+ResetQuantity()
+AttachPump()
+RemovePump()
+PressLever(res: Reserve)
+ResetPump()
+end
+
+class Reserve
+attributes
+reserveFuelAmount: Integer
+operations
+DispenseFromResever(am: Integer)
+AddToReserve(am: Integer)
+end
+
+class Transaction
+attributes
+amountSpent: Integer
+fuelPumped: Integer
+end
+
+-- A S S O C I A T I O N S --
+
+-- Manages: A petrol station manages its pumps
+association Manages between
+PetrolStation[1] role manages
+Pump[*] role managedBy
+end
+
+-- ReceiveFuel: A pump receives fuel from the reserve
+association ReceiveFuel between
+Pump[*] role receives
+Reserve[1] role dispenses
+end
+
+-- RecordTransaction: A pump records a transaction
+association RecordTransaction between
+Pump[1] role records
+Transaction[*] role recordedBy
+end
+
+constraints
+
+context p:PetrolStation
+inv: p.pumps->notEmpty()
+
+context p:Pump
+inv: p.petrolPrice >= 0
+
+context p:Reserve
+inv: reserveFuelAmount >= 0
+inv: reserveFuelAmount <= 500
+
+context PetrolStation::StartTransaction(pp: Pump)
+pre: pp.pumpStatus=#pumpFree
+post:pp.pumpStatus=#pumpOccupied
+
+context PetrolStation::AbortTransaction(pp: Pump)
+pre: pp.pumpStatus=#pumpOccupied
+post: pp.pumpStatus=#pumpFree
+
+context PetrolStation::EndTransaction(pp: Pump)
+pre: pp.pumpStatus=#pumpOccupied
+post: pp.pumpStatus=#pumpFree
+
+context Pump::FreeUpPump()
+pre: self.pumpStatus=#pumpOccupied
+post: self.pumpStatus=#pumpFree
+
+context Pump::OccupyPump()
+pre: self.pumpStatus=#pumpFree
+post: self.pumpStatus=#pumpOccupied
+
+context Pump::InputCashAmount(am: Integer)
+pre: self.pumpStatus=#pumpOccupied
+pre: am > 0
+pre: self.quantitySpecified=#unspecified
+pre: am/self.petrolPrice > 0
+post: self.quantitySpecified=#specified
+post: self.cashAmount=am
+post: self.litres=(am/petrolPrice)
+
+context Pump::InputLitreQuantity(q: Integer)
+pre: self.pumpStatus=#pumpOccupied
+pre: q > 0
+pre: self.quantitySpecified=#unspecified
+post: self.quantitySpecified=#specified
+post: self.cashAmount=(q*self.petrolPrice)
+post: self.litres=q
+
+context Pump::ResetQuantity()
+pre: self.quantitySpecified=#specified
+pre: self.fuelPumped=#unpumped
+post: self.cashAmount=0
+post: self.litres=0
+post: self.quantitySpecified=#unspecified
+
+context Pump::AttachPump()
+pre: self.pumpStatus=#pumpOccupied
+pre: self.quantitySpecified=#specified
+pre: self.pumpAttached=#unattached
+post: self.pumpAttached=#attached
+
+context Pump::RemovePump()
+pre: self.pumpStatus=#pumpOccupied
+pre: self.quantitySpecified=#specified
+pre: self.pumpAttached=#attached
+post: self.pumpAttached=#unattached
+
+context Pump::PressLever(res: Reserve)
+pre: res.reserveFuelAmount >= self.litres
+pre: self.pumpAttached=#attached
+pre: self.fuelPumped=#unpumped
+post: res.reserveFuelAmount = res.reserveFuelAmount@pre-self.litres
+post: self.fuelPumped=#pumped
+
+context Pump::ResetPump()
+post: self.quantitySpecified=#unspecified
+post: self.cashAmount=0
+post: self.litres=0
+post: self.pumpAttached=#unattached
+post: self.fuelPumped=#unpumped
