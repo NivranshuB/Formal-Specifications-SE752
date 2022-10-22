@@ -6,3 +6,6 @@
 # Files for 'fuzz' and 'prob' models
 *.fuzz
 *.prob
+
+# Files for OCL model
+*.clt
