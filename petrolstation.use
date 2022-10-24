@@ -206,6 +206,6 @@ context FuelPump::ResetPump()
 pre FuelNotPumped: self.pumpStatus = #pumpOccupied
 pre PumpIsNotAttached: self.pumpAttached = false
 post ResetFuelPumpValues: self.fuelPaidFor = false and self.quantityFuel = 0 
-and self.pumpAttached = false
+and self.pumpAttached = false and self.pumpStatus=#pumpFree
 post ResetPaymentDeviceValues: self.paymentDevice.litres = 0 and self.paymentDevice.cashAmount = 0
 and self.paymentDevice.quantitySpecified = false and self.paymentDevice.status = #inactive
