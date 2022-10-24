@@ -9,3 +9,6 @@
 
 # Files for OCL model
 *.clt
+
+# Files for CSP model
+*.pl
