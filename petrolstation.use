@@ -13,7 +13,14 @@ totalPetrolLitresSold: Integer
 petrolPrice: Integer
 operations
 SetPetrolPrice(pr: Integer)
-PayForTransaction(tr : Transaction)
+end
+
+class Reserve
+attributes
+reserveFuelAmount: Integer
+operations
+DispenseFromReserve(am: Integer)
+AddToReserve(am: Integer)
 end
 
 class Pump
@@ -25,16 +32,6 @@ RemovePump()
 end
 
 class AirPump < Pump
-end
-
-class FuelPump < Pump
-attributes
-fuelPaidFor: Boolean
-pumpStatus: PumpStatus
-quantityFuel: Integer
-operations
-PressLever(res: Reserve)
-ResetPump()
 end
 
 class PaymentDevice
@@ -53,12 +50,14 @@ PayForTransaction(tr : Transaction)
 EndTransaction(tr : Transaction)
 end
 
-class Reserve
+class FuelPump < Pump
 attributes
-reserveFuelAmount: Integer
+fuelPaidFor: Boolean
+pumpStatus: PumpStatus
+quantityFuel: Integer
 operations
-DispenseFromReserve(am: Integer)
-AddToReserve(am: Integer)
+PressLever()
+ResetPump()
 end
 
 class Transaction
@@ -67,12 +66,19 @@ cardName : String
 amountSpent : Integer
 fuelLitresPumped : Integer
 end
+
 -- A S S O C I A T I O N S --
 
 -- Manages: A petrol station manages its pumps
 association Manages between
 PetrolStation[1] role managingStation
 Pump[*] role managedPumps
+end
+
+-- ReceiveFuel: A pump receives fuel from the reserve
+association ReceiveFuel between
+FuelPump[*] role fuelReceiver
+Reserve[1] role fuelDispenser
 end
 
 -- CreatesPayment: A payment device creates payment for the fuel pump
@@ -87,112 +93,119 @@ PaymentDevice[1] role paymentDevice
 Transaction[*] role recordedTransactions
 end
 
--- ReceiveFuel: A pump receives fuel from the reserve
-association ReceiveFuel between
-FuelPump[*] role fuelReceiver
-Reserve[1] role fuelDispenser
-end
+-- C O N S T R A I N T S --
 
 constraints
+
+-- Class Invariants --
 
 context p:PetrolStation
 inv AtLeastOnePump: p.managedPumps->notEmpty()
 inv ValidPetrolPrice: p.petrolPrice >= 0
+inv TotalRevenueValid: p.totalRevenue >= 0
+inv TotalPetrolLitresSoldValid: p.totalPetrolLitresSold >= 0
 
-context p:Reserve
-inv ValidReserveFuelAmount: reserveFuelAmount >= 0
-inv ReserveLimitNotExceeded: reserveFuelAmount <= 500
+context r:Reserve
+inv ValidReserveFuelAmount: r.reserveFuelAmount >= 0
+inv ReserveLimitNotExceeded: r.reserveFuelAmount <= 500
+
+-- Operations pre/post conditions --
 
 context PetrolStation::SetPetrolPrice(pr: Integer)
 pre InputPriceValid: pr > 0
 post PetrolPriceUpdated: self.petrolPrice=pr
 
-context Pump::AttachPump()
-pre PumpIsNotAttached: self.pumpAttached=false
-post PumpIsAttached: self.pumpAttached=true
-
-context Pump::RemovePump()
-pre PumpIsAttached: self.pumpAttached=true
-post PumpIsNotAttached: self.pumpAttached=false
-
-context PaymentDevice::StartTransaction()
-pre CheckPumpFree: self.fuelPump.pumpStatus=#pumpFree
-pre NoCurrentTransaction: self.status=#inactive
-post CurrentTransactionActive: self.status=#active
-
-context PaymentDevice::AbortTransaction()
-pre CurrentTransactionActive: self.status=#active
-post CheckPumpFree: self.fuelPump.pumpStatus=#pumpFree
-post CashAmountIsReset: self.cashAmount=0
-post QuantityIsReset: self.litres=0
-post NoQuantityIsSpecified: self.quantitySpecified=false
-post NoCurrentTransaction: self.status=#inactive
-
-context PaymentDevice::EndTransaction(tr: Transaction)
-pre FuelPumped: self.fuelPump.pumpStatus=#pumpFree
-pre CurrentTransactionActive: self.status=#active
-pre PumpIsNotAttached: self.fuelPump.pumpAttached=false
-post CashAmountIsReset: self.cashAmount=0
-post QuantityIsReset: self.litres=0
-post NoQuantityIsSpecified: self.quantitySpecified=false
-post NoCurrentTransaction: self.status=#inactive
-
-context PaymentDevice::PayForTransaction(tr: Transaction)
-pre TransactionValuesCorrect: tr.amountSpent=self.cashAmount
-and tr.fuelLitresPumped=self.litres
-post revenueUpdated: self.fuelPump.managingStation.totalRevenue = self.fuelPump.managingStation.totalRevenue@pre + tr.amountSpent
-post petrolSoldUpdated: self.fuelPump.managingStation.totalPetrolLitresSold = 
-self.fuelPump.managingStation.totalPetrolLitresSold@pre + tr.fuelLitresPumped
-and tr.fuelLitresPumped=self.litres 
-post FuelPaidFor: self.fuelPump.fuelPaidFor=true
-post PumpIsOccupied: self.fuelPump.pumpStatus=#pumpOccupied
-post QuantitySpecifiedCorrect: self.fuelPump.quantityFuel=self.litres
-
-context PaymentDevice::InputCashAmount(am: Integer)
-pre TransactionIsActive: self.status=#active
-pre PositiveCashAmount: am > 0
-pre NoAmountCurrentlySpecified: self.quantitySpecified=false
-pre PositiveLitreQuantity: am/self.fuelPump.managingStation.petrolPrice > 0
-post QuantityIsSpecified: self.quantitySpecified=true
-post CashAmountIsSpecified: self.cashAmount=am
-post PetrolLitreMatchesCashAmount: self.litres=(am/self.fuelPump.managingStation.petrolPrice)
-
-context PaymentDevice::InputLitreQuantity(q: Integer)
-pre TransactionIsActive: self.status=#active
-pre PositiveLitreAmount: q > 0
-pre NoAmountCurrentlySpecified: self.quantitySpecified=false
-post QuantityIsSpecified: self.quantitySpecified=true
-post PetrolLitreMatchesCashAmount: self.cashAmount=(q*self.fuelPump.managingStation.petrolPrice)
-post LitreAmountMatchesInput: self.litres=q
-
-context PaymentDevice::ResetQuantity()
-pre QuantityIsSpecified: self.quantitySpecified=true
-post CashAmountIsReset: self.cashAmount=0
-post QuantityIsReset: self.litres=0
-post NoQuantityIsSpecified: self.quantitySpecified=false
-
-context FuelPump::PressLever(res: Reserve)
-pre FuelReserveCapacity: self.fuelDispenser.reserveFuelAmount >= self.quantityFuel
-pre PumpIsAttached: self.pumpAttached=true
-pre FuelFillingPending: self.pumpStatus=#pumpOccupied and self.fuelPaidFor=true 
-post FuelDispensedFromReserve: res.reserveFuelAmount = res.reserveFuelAmount@pre-self.quantityFuel@pre
-post FuelFillingIsComplete: self.pumpStatus=#pumpFree and self.quantityFuel=0
-and self.fuelPaidFor=false
-
-context FuelPump::ResetPump()
-pre FuelNotPumped: self.pumpStatus=#pumpOccupied
-pre PumpIsNotAttached: self.pumpAttached=false
-post ResetFuelPumpValues: self.fuelPaidFor=false and self.quantityFuel=0 
-and self.pumpAttached=false
-post ResetPaymentDeviceValues: self.paymentDevice.litres=0 and self.paymentDevice.cashAmount=0
-and self.paymentDevice.quantitySpecified=false and self.paymentDevice.status=#inactive
-
 context Reserve::DispenseFromReserve(am: Integer)
 pre ValidInput: am > 0
 pre FuelReserveCapacity: self.reserveFuelAmount >= am
-post FuelReserveUpdated: self.reserveFuelAmount=self.reserveFuelAmount@pre - am
+post FuelReserveUpdated: self.reserveFuelAmount = self.reserveFuelAmount@pre - am
 
 context Reserve::AddToReserve(am: Integer)
 pre ValidInput: am > 0
-pre FuelReserveNotExceeded: self.reserveFuelAmount+am<=500
-post FuelReserveUpdated: self.reserveFuelAmount=self.reserveFuelAmount@pre + am
+pre FuelReserveNotExceeded: self.reserveFuelAmount+am <= 500
+post FuelReserveUpdated: self.reserveFuelAmount = self.reserveFuelAmount@pre + am
+
+context Pump::AttachPump()
+pre PumpIsNotAttached: self.pumpAttached = false
+post PumpIsAttached: self.pumpAttached = true
+
+context Pump::RemovePump()
+pre PumpIsAttached: self.pumpAttached = true
+post PumpIsNotAttached: self.pumpAttached = false
+
+context PaymentDevice::StartTransaction()
+pre CheckPumpFree: self.fuelPump.pumpStatus = #pumpFree
+pre NoCurrentTransaction: self.status = #inactive
+post CurrentTransactionActive: self.status = #active
+
+context PaymentDevice::AbortTransaction()
+pre CurrentTransactionActive: self.status = #active
+post CheckPumpFree: self.fuelPump.pumpStatus = #pumpFree
+post CashAmountIsReset: self.cashAmount = 0
+post QuantityIsReset: self.litres = 0
+post NoQuantityIsSpecified: self.quantitySpecified = false
+post NoCurrentTransaction: self.status = #inactive
+
+context PaymentDevice::InputCashAmount(am: Integer)
+pre TransactionIsActive: self.status = #active
+pre PumpIsFree: self.fuelPump.pumpStatus = #pumpFree
+pre PositiveCashAmount: am > 0
+pre NoAmountCurrentlySpecified: self.quantitySpecified = false
+pre PositiveLitreQuantity: am/self.fuelPump.managingStation.petrolPrice > 0
+post QuantityIsSpecified: self.quantitySpecified = true
+post CashAmountIsSpecified: self.cashAmount = am
+post PetrolLitreMatchesCashAmount: self.litres = (am/self.fuelPump.managingStation.petrolPrice)
+
+context PaymentDevice::InputLitreQuantity(q: Integer)
+pre TransactionIsActive: self.status = #active
+pre PumpIsFree: self.fuelPump.pumpStatus = #pumpFree
+pre PositiveLitreAmount: q > 0
+pre NoAmountCurrentlySpecified: self.quantitySpecified = false
+post QuantityIsSpecified: self.quantitySpecified = true
+post PetrolLitreMatchesCashAmount: self.cashAmount = (q * self.fuelPump.managingStation.petrolPrice)
+post LitreAmountMatchesInput: self.litres = q
+
+context PaymentDevice::ResetQuantity()
+pre TransactionIsActive: self.status = #active
+pre PumpIsFree: self.fuelPump.pumpStatus = #pumpFree
+pre QuantityIsSpecified: self.quantitySpecified = true
+post CashAmountIsReset: self.cashAmount = 0
+post QuantityIsReset: self.litres = 0
+post NoQuantityIsSpecified: self.quantitySpecified = false
+
+context PaymentDevice::PayForTransaction(tr: Transaction)
+pre TransactionValuesCorrect: tr.amountSpent = self.cashAmount
+and tr.fuelLitresPumped = self.litres
+post revenueUpdated: self.fuelPump.managingStation.totalRevenue = 
+self.fuelPump.managingStation.totalRevenue@pre + tr.amountSpent and tr.amountSpent = self.cashAmount
+post petrolSoldUpdated: self.fuelPump.managingStation.totalPetrolLitresSold = 
+self.fuelPump.managingStation.totalPetrolLitresSold@pre + tr.fuelLitresPumped
+and tr.fuelLitresPumped = self.litres 
+post FuelPaidFor: self.fuelPump.fuelPaidFor = true
+post PumpIsOccupied: self.fuelPump.pumpStatus = #pumpOccupied
+post QuantitySpecifiedCorrect: self.fuelPump.quantityFuel = self.litres
+
+context PaymentDevice::EndTransaction(tr: Transaction)
+pre FuelPumped: self.fuelPump.pumpStatus = #pumpFree
+pre CurrentTransactionActive: self.status = #active
+pre PumpIsNotAttached: self.fuelPump.pumpAttached = false
+post CashAmountIsReset: self.cashAmount = 0
+post QuantityIsReset: self.litres = 0
+post NoQuantityIsSpecified: self.quantitySpecified = false
+post NoCurrentTransaction: self.status = #inactive
+
+context FuelPump::PressLever()
+pre FuelReserveCapacity: self.fuelDispenser.reserveFuelAmount >= self.quantityFuel
+pre PumpIsAttached: self.pumpAttached = true
+pre FuelFillingPending: self.pumpStatus = #pumpOccupied and self.fuelPaidFor = true 
+post FuelDispensedFromReserve: self.fuelDispenser.reserveFuelAmount = self.fuelDispenser.reserveFuelAmount@pre - self.quantityFuel@pre
+post FuelFillingIsComplete: self.pumpStatus = #pumpFree and self.quantityFuel = 0
+and self.fuelPaidFor = false
+
+context FuelPump::ResetPump()
+pre FuelNotPumped: self.pumpStatus = #pumpOccupied
+pre PumpIsNotAttached: self.pumpAttached = false
+post ResetFuelPumpValues: self.fuelPaidFor = false and self.quantityFuel = 0 
+and self.pumpAttached = false
+post ResetPaymentDeviceValues: self.paymentDevice.litres = 0 and self.paymentDevice.cashAmount = 0
+and self.paymentDevice.quantitySpecified = false and self.paymentDevice.status = #inactive
