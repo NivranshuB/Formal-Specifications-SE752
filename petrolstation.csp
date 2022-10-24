@@ -1,0 +1,38 @@
+
+channel attachPump, detachPump, occupyPump, freePump, fuelPumped
+channel cashAmount, fuelLitres : Int
+channel reserveDispense, reserveAdd : Int
+
+FreeUpPump = (freePump -> SKIP) 
+OccupyPump = (occupyPump -> SKIP)
+
+InputCashAmount2D = (cashAmount?2 -> SKIP) 
+InputCashAmount4D = (cashAmount?4 -> SKIP) 
+InputCashAmount6D = (cashAmount?6 -> SKIP)
+
+InputLitreQuantity1L = (fuelLitres?1 -> SKIP) 
+InputLitreQuantity2L = (fuelLitres?2 -> SKIP) 
+InputLitreQuantity3L = (fuelLitres?3 -> SKIP)
+
+ResetQuantity = (fuelLitres?0 -> cashAmount?0 -> UsePump)
+ResetPump = ResetQuantity
+AttachPump = (attachPump -> SKIP)
+RemovePump = (detachPump -> SKIP)
+
+PressLever1L = (fuelPumped -> reserveDispense?1 -> RemovePump)
+PressLever2L = (fuelPumped -> reserveDispense?2 -> RemovePump)
+PressLever3L = (fuelPumped -> reserveDispense?3 -> RemovePump)
+PressLever(x) = fuelPumped -> reserveDispense?x -> RemovePump
+
+DispenseFromReserve1L = (reserveDispense?1 -> SKIP) 
+DispenseFromReserve2L = (reserveDispense?2 -> SKIP) 
+DispenseFromReserve3L = (reserveDispense?3 -> SKIP) 
+
+UsePump1L = (cashAmount?2 -> attachPump ->( PressLever1L [] RemovePump))  |~|  (fuelLitres?1 -> attachPump ->( PressLever1L [] RemovePump))
+UsePump2L = (cashAmount?4 -> attachPump ->( PressLever2L [] RemovePump))  |~|   (fuelLitres?2 -> attachPump ->( PressLever2L [] RemovePump))
+UsePump3L = (cashAmount?6 -> attachPump ->( PressLever3L [] RemovePump))  |~|  (fuelLitres?3 -> attachPump ->( PressLever3L [] RemovePump))
+
+UsePump = (UsePump1L [] UsePump2L [] UsePump3L) 
+
+
+
