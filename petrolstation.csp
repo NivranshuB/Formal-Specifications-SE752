@@ -1,36 +1,52 @@
+-- CSP model representing the main external actions of the Petrol Station Management System --
 
-channel attachPump, detachPump, occupyPump, freePump, fuelPumped
-channel cashAmount, fuelLitres : Int
-channel reserveDispense, reserveAdd : Int
+-- Basic channels --
+channel attachPump, detachPump, occupyPump, freePump, fuelPumped, 
+pumpOperation, reserveOperation, stationOperation, abort
 
-FreeUpPump = (freePump -> SKIP) 
-OccupyPump = (occupyPump -> SKIP)
+-- Integer channels --
+channel inputCashAmount, inputFuelLitres, reserveDispense,
+reserveAdd, addRevenue, addPetrolLitresSold : Int
 
-InputCashAmount2D = (cashAmount?2 -> SKIP) 
-InputCashAmount4D = (cashAmount?4 -> SKIP) 
-InputCashAmount6D = (cashAmount?6 -> SKIP)
+-- Sub-level processes of the system -- 
+PUMPINPUT = (inputCashAmount ? x -> PUMPFILL [] inputFuelLitres ? y -> PUMPFILL) [] abort -> MAIN
 
-InputLitreQuantity1L = (fuelLitres?1 -> SKIP) 
-InputLitreQuantity2L = (fuelLitres?2 -> SKIP) 
-InputLitreQuantity3L = (fuelLitres?3 -> SKIP)
+PUMPFILL = (occupyPump -> attachPump -> fuelPumped -> detachPump -> freePump -> MAIN) [] abort -> MAIN
 
-ResetQuantity = (fuelLitres?0 -> cashAmount?0 -> UsePump)
-ResetPump = ResetQuantity 
-AttachPump = (attachPump -> SKIP)
-RemovePump = (detachPump -> SKIP)
+RESERVE = reserveDispense ? z -> MAIN [] reserveAdd ? z -> MAIN [] abort -> MAIN
 
-PressLever1L = (fuelPumped -> DispenseFromReserve1L -> SKIP)
-PressLever2L = (fuelPumped -> DispenseFromReserve2L -> SKIP)
-PressLever3L = (fuelPumped -> DispenseFromReserve3L -> SKIP)
+PETROLSTATION = addRevenue ? w -> MAIN [] addPetrolLitresSold ? w -> MAIN [] abort -> MAIN
 
-DispenseFromReserve1L = (reserveDispense?1 -> SKIP) 
-DispenseFromReserve2L = (reserveDispense?2 -> SKIP) 
-DispenseFromReserve3L = (reserveDispense?3 -> SKIP) 
+-- Top-Level processes of the system --
+PUMPOPERATIONS = (PUMPINPUT [| {|inputCashAmount,inputFuelLitres|} |] INPUTGEN) 
 
-UsePump1L = (cashAmount?2 -> ((AttachPump -> PressLever1L -> RemovePump) |~| (AttachPump -> RemovePump))) |~| (fuelLitres?1 -> ((AttachPump -> PressLever1L -> RemovePump) |~| (AttachPump -> RemovePump)))
-UsePump2L = (InputCashAmount4D -> ((AttachPump -> PressLever2L -> RemovePump) |~| (AttachPump -> RemovePump))) |~| (InputLitreQuantity2L -> ((AttachPump -> PressLever2L -> RemovePump) |~| (AttachPump -> RemovePump)))
-UsePump3L = (InputCashAmount6D -> ((AttachPump -> PressLever3L -> RemovePump) |~| (AttachPump -> RemovePump))) |~| (InputLitreQuantity3L -> ((AttachPump -> PressLever3L -> RemovePump) |~| (AttachPump -> RemovePump)))
+RESERVEOPERATIONS = RESERVE [| {|reserveDispense,reserveAdd|} |] RESERVEGEN 
 
-UsePump = (UsePump1L [] UsePump2L [] UsePump3L) -> SKIP
+STATIONOPERATIONS = PETROLSTATION [| {|addRevenue,addPetrolLitresSold|} |] STATIONGEN
 
+-- Input generating processes that reduce state space explosion (due to the type int) --
 
+INPUTGEN = inputCashAmount!2 -> INPUTGEN [] inputCashAmount!4 -> INPUTGEN [] inputCashAmount!6 -> INPUTGEN 
+[] inputFuelLitres!1 -> INPUTGEN [] inputFuelLitres!2 -> INPUTGEN [] inputFuelLitres!3 -> INPUTGEN
+
+RESERVEGEN = reserveDispense!2 -> RESERVEGEN [] reserveDispense!10 -> RESERVEGEN [] reserveDispense!50 -> RESERVEGEN 
+[] reserveAdd!2 -> RESERVEGEN [] reserveAdd!10 -> RESERVEGEN [] reserveAdd!50 -> RESERVEGEN
+
+STATIONGEN = addRevenue!2 -> STATIONGEN [] addRevenue!4 -> STATIONGEN [] addRevenue!6 -> STATIONGEN 
+[] addPetrolLitresSold!1 -> STATIONGEN [] addPetrolLitresSold!2 -> STATIONGEN [] addPetrolLitresSold!3 -> STATIONGEN
+
+-- Main process of the system --
+MAIN = ((pumpOperation -> PUMPOPERATIONS) [] (reserveOperation -> RESERVEOPERATIONS)  [] (stationOperation -> STATIONOPERATIONS) )
+-------------------------------------------------------------------------------------------
+
+-- Verification
+ADD_RESERVE_TRACE = reserveOperation -> reserveAdd.2 -> MAIN
+DISPENSE_RESERVE_TRACE = reserveOperation -> reserveDispense.2 -> MAIN
+
+ADD_REVENUE_TRACE = stationOperation -> addRevenue.2 -> MAIN
+ADD_LITRES_SOLD_TRACE = stationOperation -> addPetrolLitresSold.2 ->
+
+PETROL_FILL_TRACE = pumpOperation -> inputCashAmount.2 -> occupyPump -> attachPump -> fuelPumped -> detachPump -> freePump -> MAIN
+ABORT_TRACE = pumpOperation -> inputFuelLitres.1 -> abort -> MAIN
+
+assert MAIN [T= ADD_RESERVE_TRACE
