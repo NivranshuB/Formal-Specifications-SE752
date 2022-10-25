@@ -44,7 +44,7 @@ ADD_RESERVE_TRACE = reserveOperation -> reserveAdd.2 -> MAIN
 DISPENSE_RESERVE_TRACE = reserveOperation -> reserveDispense.2 -> MAIN
 
 ADD_REVENUE_TRACE = stationOperation -> addRevenue.2 -> MAIN
-ADD_LITRES_SOLD_TRACE = stationOperation -> addPetrolLitresSold.2 ->
+ADD_LITRES_SOLD_TRACE = stationOperation -> addPetrolLitresSold.2 -> MAIN
 
 PETROL_FILL_TRACE = pumpOperation -> inputCashAmount.2 -> occupyPump -> attachPump -> fuelPumped -> detachPump -> freePump -> MAIN
 ABORT_TRACE = pumpOperation -> inputFuelLitres.1 -> abort -> MAIN
