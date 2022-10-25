@@ -41,3 +41,6 @@ MAIN = pumpOperation -> PUMPOPERATIONS [] reserveOperation -> RESERVEOPERATIONS 
 -------------------------------------------------------------------------------------------
 -- Still need to add trace check for verification...
 
+TRACE = freePump -> detachPump -> fuelPumped -> attachPump -> occupyPump -> inputCashAmount.2 -> pumpOperation -> MAIN
+
+assert MAIN [T= TRACE
