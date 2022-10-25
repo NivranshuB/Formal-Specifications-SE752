@@ -2,7 +2,7 @@
 
 -- Basic channels --
 channel attachPump, detachPump, occupyPump, freePump, fuelPumped, 
-pumpOperation, reserveOperation, stationOperation
+pumpOperation, reserveOperation, stationOperation, abort
 
 -- Integer channels --
 channel inputCashAmount, inputFuelLitres, reserveDispense,
@@ -18,9 +18,9 @@ RESERVE = reserveDispense ? z -> MAIN [] reserveAdd ? z -> MAIN
 PETROLSTATION = addRevenue ? w -> MAIN [] addPetrolLitresSold ? w -> MAIN
 
 -- Top-Level processes of the system --
-PUMPOPERATIONS = PUMPINPUT [| {|inputCashAmount,inputFuelLitres|} |] INPUTGEN
+PUMPOPERATIONS = (PUMPINPUT [| {|inputCashAmount,inputFuelLitres|} |] INPUTGEN) 
 
-RESERVEOPERATIONS = RESERVE [| {|reserveDispense,reserveAdd|} |] RESERVEGEN
+RESERVEOPERATIONS = RESERVE [| {|reserveDispense,reserveAdd|} |] RESERVEGEN 
 
 STATIONOPERATIONS = PETROLSTATION [| {|addRevenue,addPetrolLitresSold|} |] STATIONGEN
 
@@ -36,7 +36,7 @@ STATIONGEN = addRevenue!2 -> STATIONGEN [] addRevenue!4 -> STATIONGEN [] addReve
 [] addPetrolLitresSold!1 -> STATIONGEN [] addPetrolLitresSold!2 -> STATIONGEN [] addPetrolLitresSold!3 -> STATIONGEN
 
 -- Main process of the system --
-MAIN = pumpOperation -> PUMPOPERATIONS [] reserveOperation -> RESERVEOPERATIONS [] stationOperation -> STATIONOPERATIONS
+MAIN = ((pumpOperation -> PUMPOPERATIONS) [] (reserveOperation -> RESERVEOPERATIONS)  [] (stationOperation -> STATIONOPERATIONS) ) /\ abort -> MAIN
 
 -------------------------------------------------------------------------------------------
 -- Still need to add trace check for verification...
